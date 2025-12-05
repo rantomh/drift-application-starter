@@ -7,15 +7,17 @@ import com.rantomah.drift.framework.annotation.mapping.Get;
 import com.rantomah.drift.framework.annotation.stereotype.Controller;
 import com.rantomah.drift.framework.web.AbstractController;
 import com.rantomah.drift.framework.web.Response;
+import io.vertx.core.Future;
 import io.vertx.ext.web.RoutingContext;
 
 @Controller
 public class HealthController extends AbstractController {
 
-    @Inject private HealthService healthService;
+    @Inject
+    private HealthService healthService;
 
     @Get(path = "/api/health")
-    public Response<HealthDto> health(RoutingContext ctx) {
-        return success(healthService.getHealth());
+    public Future<Response<HealthDto>> health(RoutingContext ctx) {
+        return healthService.getHealth().map(this::success);
     }
 }

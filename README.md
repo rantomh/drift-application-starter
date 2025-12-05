@@ -2,7 +2,7 @@
 
 **Drift** is a lightweight, convention-over-configuration web framework built on top of **Vert.x**. It provides a ready-to-use structure for building modern web applications with minimal boilerplate, while keeping full control over your code.
 
-> Note: Currently embedded within a Vert.x project. Independent Maven packaging will be available in the future.
+> Note: Currently embedded within a Vert.x starter project. Independent Maven packaging will be available soon.
 
 ---
 
@@ -62,40 +62,73 @@ src/main/java/com/rantomah/drift
 1. **Run the application**
 
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.rantomah.drift.api.Application"
+mvnw -Ddrift.profile=dev -DskipTests -Dexec.mainClass="com.rantomah.drift.api.Application" exec:java
 ```
 
-2. **Add a controller**
+2. **Sample controller**
+
+```java
+@Controller
+public class HealthController extends AbstractController {
+
+    @Inject
+    private HealthService healthService;
+
+    @Get(path = "/api/health")
+    public Future<Response<HealthDto>> health(RoutingContext ctx) {
+        return healthService.getHealth().map(this::success);
+    }
+}
+```
+
+3. **Sample MVC controller**
 
 ```java
 @MvcController
 public class HomeController {
 
-    @Get(path = "/")
-    public String home() {
-        return "Welcome to Drift!";
+    @Property("app.version")
+    private String version;
+
+    @Get
+    public Future<String> home(RoutingContext ctx) {
+        String message = I18n.t(ctx, "message.home", version);
+        ctx.put("message", message);
+        return Future.succeededFuture("index");
     }
 }
 ```
 
-3. **Define a service**
+4. **Sample service**
 
 ```java
 @Service
 public class HealthServiceImpl implements HealthService {
-    public HealthDto getStatus() {
-        return new HealthDto("UP");
+
+    @Inject
+    private Environment environment;
+
+    @Inject
+    private EventPublisher eventPublisher;
+
+    @Override
+    public Future<HealthDto> getHealth() {
+        Health health = new Health();
+        health.setStatus("UP");
+        health.setVersion(environment.getProperty("app.version"));
+        eventPublisher.publish(new TestEvent("admin", "admin@drift.io")); // automaticaly async
+        return Future.succeededFuture(HealthMapper.INSTANCE.toDto(health));
     }
 }
 ```
 
-4. **Configure application profiles**
+5. **Configure application profiles**
 
 * `application.yml` — default
 * `application-dev.yml` — development
 * `application-prod.yml` — production
 
-Use the `DRIFT_PROFILE` environment variable or command-line argument to select the profile.
+Use the `DRIFT_PROFILE` environment variable or `drift.profile` property to select the profile.
 
 ---
 
@@ -139,15 +172,6 @@ public class MyService {
 
 * Logback-based logging (`logback.xml`)
 * Configurable per environment.
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create a branch (`feature/new-feature`)
-3. Commit your changes
-4. Push and create a Pull Request
 
 ---
 

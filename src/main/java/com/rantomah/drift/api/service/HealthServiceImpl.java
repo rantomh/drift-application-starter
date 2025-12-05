@@ -8,22 +8,23 @@ import com.rantomah.drift.framework.annotation.di.Inject;
 import com.rantomah.drift.framework.annotation.stereotype.Service;
 import com.rantomah.drift.framework.core.Environment;
 import com.rantomah.drift.framework.core.event.EventPublisher;
+import io.vertx.core.Future;
 
 @Service
 public class HealthServiceImpl implements HealthService {
 
-    @Inject private Environment environment;
+    @Inject
+    private Environment environment;
 
-    @Inject private EventPublisher eventPublisher;
+    @Inject
+    private EventPublisher eventPublisher;
 
     @Override
-    public HealthDto getHealth() {
+    public Future<HealthDto> getHealth() {
         Health health = new Health();
         health.setStatus("UP");
         health.setVersion(environment.getProperty("app.version"));
-
         eventPublisher.publish(new TestEvent("admin", "admin@drift.io"));
-
-        return HealthMapper.INSTANCE.toDto(health);
+        return Future.succeededFuture(HealthMapper.INSTANCE.toDto(health));
     }
 }
